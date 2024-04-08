@@ -625,6 +625,8 @@ namex(char *path, int nameiparent, char *name, int follow)
 	else
 		ip = idup(myproc()->cwd);
 
+	int depth = 0;
+
 	while((path = skipelem(path, name)) != 0){
 		ilock(ip);
 		if(ip->type != T_DIR){
@@ -643,6 +645,11 @@ namex(char *path, int nameiparent, char *name, int follow)
 		iunlock(ip);
 		ilock(next);
 		if (follow && next->type == T_SYMLINK) {
+			if (depth == 10) {
+				cprintf("namex: recursion depth exceeded\n");
+				iunlock(next);
+				return 0;
+			}
 			char cmp[512];
 			if (readi(next, cmp, 0, 512) <= 0) {
 				iunlock(next);
@@ -650,6 +657,7 @@ namex(char *path, int nameiparent, char *name, int follow)
 			}
 			cmp[strlen(cmp)] = '\0';
 			path = cmp;
+			depth++;
 			iunlock(next);
 		} else {
 			iunlock(next);
