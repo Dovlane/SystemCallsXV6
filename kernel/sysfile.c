@@ -125,7 +125,7 @@ sys_link(void)
 		return -1;
 
 	begin_op();
-	if((ip = namei(old)) == 0){
+	if((ip = nofollow_namei(old)) == 0){
 		end_op();
 		return -1;
 	}
@@ -243,14 +243,15 @@ create(char *path, short type, short major, short minor)
 	struct inode *ip, *dp;
 	char name[DIRSIZ];
 
-	if((dp = nameiparent(path, name)) == 0)
+	if((dp = nameiparent(path, name)) == 0) {
 		return 0;
+	}
 	ilock(dp);
 
 	if((ip = dirlookup(dp, name, 0)) != 0){
 		iunlockput(dp);
 		ilock(ip);
-		if((type == T_FILE && ip->type == T_FILE) || ip->type == T_DEV)
+		if((type == T_FILE && ip->type == T_FILE) || (type == T_SYMLINK && ip->type == T_SYMLINK) || ip->type == T_DEV)
 			return ip;
 		iunlockput(ip);
 		return 0;
@@ -301,12 +302,20 @@ sys_open(void)
 			return -1;
 		}
 	} else {
-		if((ip = namei(path)) == 0){
+		int criteria = O_RDONLY;
+		if (omode & O_NOFOLLOW) {
+			ip = nofollow_namei(path);
+			criteria |= O_NOFOLLOW;
+		}
+		else {
+			ip = namei(path);
+		}
+		if(ip == 0){
 			end_op();
 			return -1;
 		}
 		ilock(ip);
-		if(ip->type == T_DIR && omode != O_RDONLY){
+		if(ip->type == T_DIR && omode != criteria){
 			iunlockput(ip);
 			end_op();
 			return -1;
@@ -320,16 +329,67 @@ sys_open(void)
 		end_op();
 		return -1;
 	}
+
 	iunlock(ip);
 	end_op();
 
 	f->type = FD_INODE;
 	f->ip = ip;
 	f->off = 0;
-	f->readable = !(omode & O_WRONLY);
+	f->readable = !(omode & O_WRONLY) && 1;
 	f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
+
+
 	return fd;
 }
+
+
+int
+sys_symlink(void) {
+
+	char *target;
+	char *linkname;
+	int fd, omode;
+	struct file *f;
+	struct inode *ip_link;
+
+	if (argstr(0, &target) < 0)
+		return -1;
+
+	if (argstr(1, &linkname) < 0)
+		return -1;
+	begin_op();
+	ip_link = create(linkname, T_SYMLINK, 0, 0);
+	if (ip_link == 0) { // create vec lock-uje
+		end_op();
+		return -1;
+	}
+	//ilock(ip_link);
+	if((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0){
+		if(f)
+			fileclose(f);
+		iunlockput(ip_link);
+		end_op();
+		return -1;
+	}
+
+	//omode = O_WRONLY;
+	iunlock(ip_link);
+	end_op();
+
+	f->type = FD_INODE;
+	f->ip = ip_link;
+	f->off = 0;
+	f->readable = O_RDONLY;
+	f->writable = O_WRONLY;
+
+	if (filewrite(f, target, strlen(target) + 1) == -1) {
+		panic("I don't know how to write to file!\n");
+	}
+
+	return 0;
+}
+
 
 int
 sys_mkdir(void)

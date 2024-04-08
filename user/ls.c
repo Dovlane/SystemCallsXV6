@@ -3,6 +3,8 @@
 #include "user.h"
 #include "kernel/fs.h"
 
+#define O_NOFOLLOW 0x400 // -> 100 0000 0000
+
 char*
 fmtname(char *path)
 {
@@ -30,7 +32,7 @@ ls(char *path)
 	struct dirent de;
 	struct stat st;
 
-	if((fd = open(path, 0)) < 0){
+	if((fd = open(path, O_NOFOLLOW)) < 0){
 		fprintf(2, "ls: cannot open %s\n", path);
 		return;
 	}
@@ -58,6 +60,7 @@ ls(char *path)
 			if(de.inum == 0)
 				continue;
 			memmove(p, de.name, DIRSIZ);
+
 			p[DIRSIZ] = 0;
 			if(stat(buf, &st) < 0){
 				printf("ls: cannot stat %s\n", buf);
@@ -65,6 +68,10 @@ ls(char *path)
 			}
 			printf("%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size);
 		}
+		break;
+
+	case T_SYMLINK:
+		printf("%s %d %d %d\n", fmtname(path), st.type, st.ino, st.size);
 		break;
 	}
 	close(fd);
