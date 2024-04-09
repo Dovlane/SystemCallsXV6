@@ -442,6 +442,27 @@ stati(struct inode *ip, struct stat *st)
 	st->type = ip->type;
 	st->nlink = ip->nlink;
 	st->size = ip->size;
+	int i;
+	int counter = 0;
+	for(i = 0; i < NDIRECT; i++){
+		if(ip->addrs[i]){
+			counter++;
+		}
+	}
+
+	if(ip->addrs[NDIRECT]){
+		struct buf *bp;
+		uint *a;
+		bp = bread(ip->dev, ip->addrs[NDIRECT]);
+		a = (uint*)bp->data;
+		int j = 0;
+		for(j = 0; j < NINDIRECT; j++){
+			if(a[j])
+				counter++;
+		}
+		brelse(bp);
+	}
+	st->blocks = counter;
 }
 
 // Read data from inode.
@@ -627,6 +648,10 @@ namex(char *path, int nameiparent, char *name, int follow)
 
 	int depth = 0;
 
+	char path_0[512];
+	memset(path_0, 0, 512);
+	memmove(path_0, path, strlen(path));
+
 	while((path = skipelem(path, name)) != 0){
 		ilock(ip);
 		if(ip->type != T_DIR){
@@ -638,10 +663,12 @@ namex(char *path, int nameiparent, char *name, int follow)
 			iunlock(ip);
 			return ip;
 		}
-		if((next = dirlookup(ip, name, 0)) == 0){
+		if((next = dirlookup(ip, name, 0)) == 0) {
+			cprintf("File on path %s does not exist. ", path_0);
 			iunlockput(ip);
 			return 0;
 		}
+		
 		iunlock(ip);
 		ilock(next);
 		if (follow && next->type == T_SYMLINK) {
@@ -663,7 +690,6 @@ namex(char *path, int nameiparent, char *name, int follow)
 			iunlock(next);
 			ip = next;
 		}
-
 	}
 	if(nameiparent){
 		iput(ip);
@@ -688,5 +714,5 @@ struct inode* nofollow_namei(char *path)
 struct inode*
 nameiparent(char *path, char *name)
 {
-	return namex(path, 1, name, 1);
+	return namex(path, 1, name, 0);
 }

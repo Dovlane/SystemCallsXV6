@@ -251,8 +251,10 @@ create(char *path, short type, short major, short minor)
 	if((ip = dirlookup(dp, name, 0)) != 0){
 		iunlockput(dp);
 		ilock(ip);
-		if((type == T_FILE && ip->type == T_FILE) || (type == T_SYMLINK && ip->type == T_SYMLINK) || ip->type == T_DEV)
+		if((type == T_FILE && ip->type == T_FILE) || ip->type == T_DEV)
 			return ip;
+		if (type == T_SYMLINK && ip->type == T_SYMLINK)
+			cprintf("You cannot write to symlink once it has been created.\n");
 		iunlockput(ip);
 		return 0;
 	}
@@ -310,12 +312,12 @@ sys_open(void)
 		else {
 			ip = namei(path);
 		}
-		if(ip == 0){
+		if(ip == 0) {
 			end_op();
 			return -1;
 		}
 		ilock(ip);
-		if(ip->type == T_DIR && omode != criteria){
+		if(ip->type == T_DIR && omode != criteria){ // omode != O_RDONLY
 			iunlockput(ip);
 			end_op();
 			return -1;
@@ -358,7 +360,18 @@ sys_symlink(void) {
 
 	if (argstr(1, &linkname) < 0)
 		return -1;
+
 	begin_op();
+	//for checking if path is valid if needed
+	// struct inode *ip_check;
+	// ip_check = namei(linkname);
+	// if (ip_check != 0) {
+	// 	ilock(ip_check);
+	// 	iunlockput(ip_check);
+	// 	end_op();
+	// 	return -1;
+	// }
+	
 	ip_link = create(linkname, T_SYMLINK, 0, 0);
 	if (ip_link == 0) { // create vec lock-uje
 		end_op();
@@ -380,12 +393,14 @@ sys_symlink(void) {
 	f->type = FD_INODE;
 	f->ip = ip_link;
 	f->off = 0;
-	f->readable = O_RDONLY;
-	f->writable = O_WRONLY;
+	f->readable = 1;
+	f->writable = 1;
 
 	if (filewrite(f, target, strlen(target) + 1) == -1) {
-		panic("I don't know how to write to file!\n");
+		cprintf("I don't know how to write to file!\n");
 	}
+
+	f->writable = 0;
 
 	return 0;
 }
