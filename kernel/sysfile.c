@@ -87,6 +87,28 @@ sys_write(void)
 
 	if(argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argptr(1, &p, n) < 0)
 		return -1;
+	
+	return filewrite(f, p, n);
+}
+
+int
+sys_mywrite(void) {
+	struct file *f;
+	int n;
+	char *p;
+	if (argfd(0, 0, &f) < 0) {
+		cprintf("crash: argfd(0, 0, &f) < 0\n");
+		return -1;
+	}
+	if (argint(2, &n) < 0) {
+		cprintf("crash: argint(2, &n) < 0\n");
+		return -1;
+	}
+	if (argptr(1, &p, n) < 0) {
+		cprintf("argptr(1, &p, n) < 0\n");
+		return -1;
+	}
+
 	return filewrite(f, p, n);
 }
 
@@ -237,6 +259,8 @@ bad:
 	return -1;
 }
 
+
+
 static struct inode*
 create(char *path, short type, short major, short minor)
 {
@@ -362,15 +386,6 @@ sys_symlink(void) {
 		return -1;
 
 	begin_op();
-	//for checking if path is valid if needed
-	// struct inode *ip_check;
-	// ip_check = namei(linkname);
-	// if (ip_check != 0) {
-	// 	ilock(ip_check);
-	// 	iunlockput(ip_check);
-	// 	end_op();
-	// 	return -1;
-	// }
 	
 	ip_link = create(linkname, T_SYMLINK, 0, 0);
 	if (ip_link == 0) { // create vec lock-uje

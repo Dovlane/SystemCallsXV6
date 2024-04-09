@@ -24,7 +24,7 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int symlink(char* dest, char* link);
-int writetest(char* path);
+int mywrite(int, const void*, int);
 
 // ulib.c
 int stat(const char*, struct stat*);

@@ -197,7 +197,9 @@ UPROGS=\
 	$U/_zombie\
 	$U/_sln\
 	$U/_du\
-	$U/_writetest\
+	$U/_mywrite\
+	$U/_symlinkinfo\
+	$U/_uln\
 
 fs.img: $T/mkfs README $(UPROGS)
 	$T/mkfs fs.img README $(UPROGS)

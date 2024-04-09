@@ -8,7 +8,7 @@ file_open(char* path) {
     struct stat st;
     int fd;
     if ((fd = open(path, 0) < 0)) {
-        fprintf(2, "sln: cannot open %s\n", path);
+        fprintf(2, "sln: file on path %s does not exist \n", path);
 		return -1;
     }
 

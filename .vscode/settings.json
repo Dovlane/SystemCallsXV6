@@ -9,6 +9,12 @@
         "stop_token": "cpp",
         "streambuf": "cpp",
         "chrono": "c",
-        "functional": "c"
+        "functional": "c",
+        "x86.h": "c",
+        "array": "c",
+        "string_view": "c",
+        "format": "c",
+        "initializer_list": "c",
+        "span": "c"
     }
 }

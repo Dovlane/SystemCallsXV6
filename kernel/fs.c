@@ -664,7 +664,6 @@ namex(char *path, int nameiparent, char *name, int follow)
 			return ip;
 		}
 		if((next = dirlookup(ip, name, 0)) == 0) {
-			cprintf("File on path %s does not exist. ", path_0);
 			iunlockput(ip);
 			return 0;
 		}
