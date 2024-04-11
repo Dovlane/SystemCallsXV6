@@ -1,3 +1,11 @@
+ABOUT
+
+This was a faculty project on RAF. The idea of the project was to demonstrate our knowledge of file system structure and processes. We added 3 functionalities:
+1. symlink - new type of link. It points to another file or directory by containing relative path to the target.
+2. symlinkinfo - user function that lists all symlinks in current directory
+3. du - lists all the content of the given directories and shows how many memory they take in memory
+
+
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-24ddc0f5d75046c5622901739e7c5dd533143b0c8e959d652212380cedb1ea36.svg)](https://classroom.github.com/a/UoNznjRd)
 xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
 Version 6 (v6).  xv6 loosely follows the structure and style of v6,
